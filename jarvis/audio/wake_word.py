@@ -39,7 +39,7 @@ recommended default). The flip exists specifically to preserve the
 """
 
 from __future__ import annotations
-
+import asyncio
 import logging
 from pathlib import Path
 
@@ -161,7 +161,7 @@ class OpenWakeWord:
         # boundary, not the pipeline").
         audio = np.frombuffer(frame, dtype=np.int16)
         try:
-            scores = self._model.predict(audio)
+            scores = await asyncio.to_thread(self._model.predict, audio)
         except Exception:
             log.exception("openwakeword.predict raised")
             return None
