@@ -34,8 +34,8 @@ def test_defaults_match_spec():
     assert c.audio.prefer_respeaker is True
     assert c.wake_word.model == "hey_jarvis"
     assert c.wake_word.sensitivity == 0.5
-    assert c.stt.model_size == "tiny.en"
-    assert c.stt.language == "en"
+    assert c.stt.model_size == "tiny"
+    assert c.stt.language is None
     assert c.stt.compute_type == "int8"
     assert c.tts.voice == "en_GB-alan-medium"
     assert c.llm.model == "qwen2.5:7b-instruct"
@@ -349,11 +349,11 @@ def test_migrate_v2_to_v3_bumps_version_only():
     assert out["stt"] == stt_before
 
 
-def test_fresh_install_gets_tiny_en_default():
-    """New installs (no config on disk) get 'tiny.en' as the STT model."""
+def test_fresh_install_gets_multilingual_default():
+    """New installs (no config on disk) get 'tiny' + auto-detect as the STT default."""
     cfg = JarvisConfig()
-    assert cfg.stt.model_size == "tiny.en"
-
+    assert cfg.stt.model_size == "tiny"
+    assert cfg.stt.language is None
 
 def test_load_config_migrates_v2_file_on_disk(tmp_path: Path):
     """End-to-end: a v2 config with model_size='base' survives migration intact."""
@@ -930,3 +930,41 @@ def test_migrate_v19_to_v20_preserves_existing_vision_settings():
     assert out["vision"]["temperature"] == 0.5
 
 
+# --- v20 -> v21: STT default switches to multilingual auto-detect --------
+
+
+def _v20_data(**stt_overrides: object) -> dict:
+    """Build a minimal v20 config dict with optional stt field overrides."""
+    base = JarvisConfig().model_dump(mode="json")
+    base["schema_version"] = 20
+    base["stt"].update(stt_overrides)
+    return base
+
+
+def test_migrate_v20_to_v21_preserves_explicit_stt_values():
+    """Existing configs keep their model_size/language exactly as-is —
+    including the old default pair 'tiny.en'/'en' — since we cannot
+    distinguish a prior default from an explicit user choice."""
+    data = _v20_data(model_size="tiny.en", language="en")
+    out = migrate(data)
+    assert out["schema_version"] == CURRENT_SCHEMA_VERSION
+    assert out["stt"]["model_size"] == "tiny.en"
+    assert out["stt"]["language"] == "en"
+
+#v20-v21
+def test_migrate_v20_to_v21_bumps_version_only():
+    data = _v20_data()
+    stt_before = dict(data["stt"])
+    out = migrate(data)
+    assert out["schema_version"] == CURRENT_SCHEMA_VERSION
+    assert out["stt"] == stt_before
+
+
+def test_load_config_migrates_v20_file_on_disk(tmp_path: Path):
+    p = tmp_path / "config.json"
+    v20 = _v20_data(model_size="tiny.en", language="en")
+    p.write_text(json.dumps(v20), encoding="utf-8")
+    cfg = load_config(p)
+    assert cfg.schema_version == CURRENT_SCHEMA_VERSION
+    assert cfg.stt.model_size == "tiny.en"
+    assert cfg.stt.language == "en"

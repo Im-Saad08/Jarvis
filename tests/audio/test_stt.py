@@ -209,7 +209,7 @@ async def test_transcribe_converts_int16_bytes_to_float32_normalized(
     assert audio.shape == (100,)
     # 16384 / 32768 == 0.5
     assert audio[0] == pytest.approx(0.5, abs=1e-4)
-    assert kwargs["language"] == "en"
+    assert kwargs["language"] is None
 
 
 async def test_transcribe_isolates_inference_exception(

@@ -169,8 +169,8 @@ class STTConfig(_Base):
     # or who have a GPU can switch to base.en (or base/small) in
     # Settings → Models. The .en suffix restricts the model to English only,
     # which shaves another ~10% vs the multilingual variant.
-    model_size: Literal["tiny", "tiny.en", "base", "base.en", "small", "small.en"] = "tiny.en"
-    language: str = "en"
+    model_size: Literal["tiny", "tiny.en", "base", "base.en", "small", "small.en"] = "tiny"
+    language: str | None = None
     compute_type: Literal["int8", "float16", "float32"] = "int8"
 
 
@@ -775,7 +775,6 @@ MIGRATIONS: dict[int, Migration] = {
     19: _migrate_v19_to_v20,
 }
 
-
 class ConfigMigrationError(ValueError):
     """Raised when migration cannot proceed (missing version, unknown future
     version, missing migration, or a migration that didn't bump the version)."""
@@ -802,7 +801,7 @@ def migrate(data: dict) -> dict:
             )
         data = migration(data)
         new_version = data.get("schema_version")
-        if new_version != version + 1:
+        if not isinstance(new_version, int) or new_version != version + 1:
             raise ConfigMigrationError(
                 f"migration {version} -> {version + 1} produced "
                 f"schema_version={new_version!r}"

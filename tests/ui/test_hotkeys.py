@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import sys
 import types
+from collections.abc import Callable
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -60,7 +61,7 @@ class _FakeGlobalHotKeys:
 
     instances: list[_FakeGlobalHotKeys] = []
 
-    def __init__(self, actions: dict[str, object]) -> None:
+    def __init__(self, actions: dict[str, Callable[[], None]]) -> None:
         self.actions = actions
         self.start_calls = 0
         self.stop_calls = 0
@@ -78,7 +79,7 @@ class _FakeGlobalHotKeys:
         self.actions[key]()
 
 
-def _install_fake_pynput() -> _FakeGlobalHotKeys:
+def _install_fake_pynput() -> types.ModuleType:
     """Inject a fake pynput.keyboard module into sys.modules so the
     lazy import inside register_all() finds our stub. Returns the
     fake class so the test can assert on its state."""
@@ -132,6 +133,7 @@ def test_register_all_starts_listener_with_configured_bindings(fake_pynput):
     assert set(inst.actions.keys()) == {
         "<ctrl>+<shift>+m",
         "<ctrl>+<shift>+,",
+        "<ctrl>+<shift>+p",
     }
 
 
@@ -162,7 +164,7 @@ def test_register_all_logs_and_skips_unparseable_binding(
     """A bad binding must NOT block the others from registering."""
     import logging
     hk = HotkeysConfig(mute="", push_to_talk=None,
-                       open_settings="ctrl+shift+,")
+                       open_settings="ctrl+shift+,", command_palette="")
     mgr, *_ = _make_mgr(hotkeys=hk)
     with caplog.at_level(logging.WARNING, logger="jarvis.ui.hotkeys"):
         mgr.register_all()
@@ -178,7 +180,7 @@ def test_register_all_with_no_valid_bindings_skips_listener(
     The composition root still gets a working HotkeyManager — it just
     does nothing."""
     import logging
-    hk = HotkeysConfig(mute="", push_to_talk=None, open_settings="")
+    hk = HotkeysConfig(mute="", push_to_talk=None, open_settings="",  command_palette="")
     mgr, *_ = _make_mgr(hotkeys=hk)
     with caplog.at_level(logging.INFO, logger="jarvis.ui.hotkeys"):
         mgr.register_all()

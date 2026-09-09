@@ -116,7 +116,7 @@ async def test_audio_main_happy_path():
     holder: list[str | None] = [None]
     done = threading.Event()
 
-    await _audio_main(lm, pipeline, ollama, tts, stt, wake_word, bus, sm, coordinator, lifecycle_cfg, stop_event, holder, done, source=_make_source(), mcp_manager=_make_mcp_manager(), mcp_servers=[])
+    await _audio_main(lm, pipeline, ollama, tts, stt, wake_word, bus, sm, coordinator, lifecycle_cfg, stop_event, holder, done, source=_make_source(), mcp_manager=_make_mcp_manager(), mcp_servers=[], registry=MagicMock())
 
     lm.load_all.assert_awaited_once()
     ollama.warm.assert_awaited_once()
@@ -152,7 +152,7 @@ async def test_audio_main_load_failure_sets_error_skips_pipeline():
     holder: list[str | None] = [None]
     done = threading.Event()
 
-    await _audio_main(lm, pipeline, ollama, tts, stt, wake_word, bus, sm, coordinator, lifecycle_cfg, stop_event, holder, done, source=_make_source(), mcp_manager=_make_mcp_manager(), mcp_servers=[])
+    await _audio_main(lm, pipeline, ollama, tts, stt, wake_word, bus, sm, coordinator, lifecycle_cfg, stop_event, holder, done, source=_make_source(), mcp_manager=_make_mcp_manager(), mcp_servers=[], registry=MagicMock())
 
     assert done.is_set()
     assert holder[0] is not None
@@ -183,7 +183,7 @@ async def test_audio_main_ollama_warmup_failure_is_non_fatal():
     holder: list[str | None] = [None]
     done = threading.Event()
 
-    await _audio_main(lm, pipeline, ollama, tts, stt, wake_word, bus, sm, coordinator, lifecycle_cfg, stop_event, holder, done, source=_make_source(), mcp_manager=_make_mcp_manager(), mcp_servers=[])
+    await _audio_main(lm, pipeline, ollama, tts, stt, wake_word, bus, sm, coordinator, lifecycle_cfg, stop_event, holder, done, source=_make_source(), mcp_manager=_make_mcp_manager(), mcp_servers=[], registry=MagicMock())
 
     assert done.is_set()
     assert holder[0] is not None
@@ -226,7 +226,7 @@ async def test_audio_main_unload_after_pipeline_stop():
     holder: list[str | None] = [None]
     done = threading.Event()
 
-    await _audio_main(lm, pipeline, ollama, tts, stt, wake_word, bus, sm, coordinator, lifecycle_cfg, stop_event, holder, done, source=_make_source(), mcp_manager=_make_mcp_manager(), mcp_servers=[])
+    await _audio_main(lm, pipeline, ollama, tts, stt, wake_word, bus, sm, coordinator, lifecycle_cfg, stop_event, holder, done, source=_make_source(), mcp_manager=_make_mcp_manager(), mcp_servers=[], registry=MagicMock())
 
     assert order == ["pipeline_stop", "unload_all"]
 

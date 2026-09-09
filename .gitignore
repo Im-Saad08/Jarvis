@@ -59,3 +59,4 @@ _overlay_*.py
 _overlay_*.txt
 
 external/
+pyright_full_report.txt
